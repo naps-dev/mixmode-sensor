@@ -104,7 +104,7 @@ jobs:
         run: |
           IMAGE_TAG="${{ env.IMAGE_TAG }}"
           IMAGE_TAG=${IMAGE_TAG//\//\_}
-          zarf tools clear-cache
+          rm -rvf /home/ec2-user/.zarf-cache/repos/
           zarf package create --set TAG="$IMAGE_TAG" --confirm
       
       - name: Save Package to S3
