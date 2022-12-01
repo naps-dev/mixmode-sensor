@@ -1,7 +1,7 @@
 image:
   repository: 765814079306.dkr.ecr.us-east-1.amazonaws.com/mixmode-sensor
   pullPolicy: Always
-  tag: "feature_convertvm"
+  tag: "main"
 
 imagePullSecrets: []
 nameOverride: ""
