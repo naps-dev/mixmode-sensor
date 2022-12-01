@@ -54,7 +54,7 @@ spec:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 150Gi  # TODO: add the exact size here
+              storage: 55Gi  # TODO: add the exact size here
         source:
           registry:
             url: "docker://{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
