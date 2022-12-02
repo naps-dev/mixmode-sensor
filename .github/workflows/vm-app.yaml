@@ -22,67 +22,67 @@ env:
   ZARF_PACKAGE: zarf-package-mixmode-sensor-amd64.tar.zst
 
 jobs:
-  convert-vm:
-    runs-on: self-hosted
+  # convert-vm:
+  #   runs-on: self-hosted
 
-    steps:
-      - uses: actions/checkout@v3
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: Retrieve Source VM
-        run: |
-          aws s3 cp --no-progress "${{ env.S3_URL }}"/"${{ env.VM }}" .
+  #     - name: Retrieve Source VM
+  #       run: |
+  #         aws s3 cp --no-progress "${{ env.S3_URL }}"/"${{ env.VM }}" .
 
-      - name: Convert VM
-        run: |
-          LIBGUESTFS_BACKEND=direct \
-            virt-v2v \
-            -i ova "${{ env.VM }}" \
-            -o local -of qcow2 -os "$PWD" -on "${{ env.V2V_OUT }}"
+  #     - name: Convert VM
+  #       run: |
+  #         LIBGUESTFS_BACKEND=direct \
+  #           virt-v2v \
+  #           -i ova "${{ env.VM }}" \
+  #           -o local -of qcow2 -os "$PWD" -on "${{ env.V2V_OUT }}"
 
-      - name: Customize VM
-        run: |
-          cp "${{ env.V2V_OUT }}"-sda "${{ env.QCOW2_FILE }}"
-          LIBGUESTFS_BACKEND=direct \
-            virt-customize \
-            -a "${{ env.QCOW2_FILE }}" \
-            --run-command 'yum install -y cloud-init qemu-guest-agent' \
-            --run-command 'cloud-init clean --logs --seed'  \
-            --run-command 'sed -i '"'"'s/GRUB_CMDLINE_LINUX="\([^"]*\)"/GRUB_CMDLINE_LINUX="\1 console=tty0 console=ttyS0,115200n8"/'"'"' /etc/default/grub'  \
-            --append-line '/etc/default/grub:GRUB_TERMINAL=serial' \
-            --append-line '/etc/default/grub:GRUB_SERIAL_COMMAND="serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1"' \
-            --run-command 'grub2-mkconfig -o /boot/grub2/grub.cfg'
+  #     - name: Customize VM
+  #       run: |
+  #         cp "${{ env.V2V_OUT }}"-sda "${{ env.QCOW2_FILE }}"
+  #         LIBGUESTFS_BACKEND=direct \
+  #           virt-customize \
+  #           -a "${{ env.QCOW2_FILE }}" \
+  #           --run-command 'yum install -y cloud-init qemu-guest-agent' \
+  #           --run-command 'cloud-init clean --logs --seed'  \
+  #           --run-command 'sed -i '"'"'s/GRUB_CMDLINE_LINUX="\([^"]*\)"/GRUB_CMDLINE_LINUX="\1 console=tty0 console=ttyS0,115200n8"/'"'"' /etc/default/grub'  \
+  #           --append-line '/etc/default/grub:GRUB_TERMINAL=serial' \
+  #           --append-line '/etc/default/grub:GRUB_SERIAL_COMMAND="serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1"' \
+  #           --run-command 'grub2-mkconfig -o /boot/grub2/grub.cfg'
 
-      - name: Save VM to S3
-        run: |
-          aws s3 cp --no-progress "${{ env.QCOW2_FILE }}" "${{ env.S3_PATH }}/${{ env.QCOW2_FILE }}"
+  #     - name: Save VM to S3
+  #       run: |
+  #         aws s3 cp --no-progress "${{ env.QCOW2_FILE }}" "${{ env.S3_PATH }}/${{ env.QCOW2_FILE }}"
       
-  build-image:
-    runs-on: self-hosted
-    needs: convert-vm
+  # build-image:
+  #   runs-on: self-hosted
+  #   needs: convert-vm
 
-    steps:
-      - uses: actions/checkout@v3
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: Login to ECR
-        run: |
-          aws ecr get-login-password | docker login --username AWS --password-stdin 765814079306.dkr.ecr.us-east-1.amazonaws.com
+  #     - name: Login to ECR
+  #       run: |
+  #         aws ecr get-login-password | docker login --username AWS --password-stdin 765814079306.dkr.ecr.us-east-1.amazonaws.com
 
-      - name: Retrieve Source VM
-        run: |
-          mkdir disk
-          aws s3 cp --no-progress "${{ env.S3_PATH }}/${{ env.QCOW2_FILE }}" disk/
+  #     - name: Retrieve Source VM
+  #       run: |
+  #         mkdir disk
+  #         aws s3 cp --no-progress "${{ env.S3_PATH }}/${{ env.QCOW2_FILE }}" disk/
     
-      - name: Build OCI Container
-        run: |
-          IMAGE_TAG="${{ env.IMAGE_TAG }}"
-          IMAGE_TAG=${IMAGE_TAG//\//\_}
-          docker build -t "${{ env.IMAGE_NAME }}":"$IMAGE_TAG" .
+  #     - name: Build OCI Container
+  #       run: |
+  #         IMAGE_TAG="${{ env.IMAGE_TAG }}"
+  #         IMAGE_TAG=${IMAGE_TAG//\//\_}
+  #         docker build -t "${{ env.IMAGE_NAME }}":"$IMAGE_TAG" .
       
-      - name: Push OCI Container
-        run: |
-          IMAGE_TAG="${{ env.IMAGE_TAG }}"
-          IMAGE_TAG=${IMAGE_TAG//\//\_}
-          docker push "${{ env.IMAGE_NAME }}":"$IMAGE_TAG"
+  #     - name: Push OCI Container
+  #       run: |
+  #         IMAGE_TAG="${{ env.IMAGE_TAG }}"
+  #         IMAGE_TAG=${IMAGE_TAG//\//\_}
+  #         docker push "${{ env.IMAGE_NAME }}":"$IMAGE_TAG"
 
   package-create:
     runs-on: self-hosted
