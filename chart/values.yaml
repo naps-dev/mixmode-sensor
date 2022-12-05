@@ -5,4 +5,4 @@ image:
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: "mimode-senseor"
+fullnameOverride: "mixmode-senseor"
