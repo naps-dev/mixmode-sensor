@@ -17,7 +17,7 @@ spec:
         name: mixmode-sensor
   values:
     image:
-      tag: "###ZARF_CONST_TAG###"
+      tag: ###ZARF_CONST_TAG###
   test:
     enable: false
   install:

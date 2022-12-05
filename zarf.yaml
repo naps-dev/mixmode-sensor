@@ -7,7 +7,7 @@ metadata:
 
 constants:
   - name: TAG
-    default: "main"
+    value: "###ZARF_PKG_VAR_TAG###"
 
 variables:
   - name: BRANCH
