@@ -30,8 +30,8 @@ spec:
                 - port: 22
                 - port: 80
         resources:
-          limits:
-            cpu: 4 # from OVA, greater than 2 CPUs required due to`isolcpus` config.
+          requests:
+            cpu: 3 # from OVA, greater than 2 CPUs required due to`isolcpus` config.
             memory: 16G # from OVA's OVF XML
       networks:
         - name: default
