@@ -1,0 +1,31 @@
+kind: ZarfPackageConfig
+metadata:
+  name: mixmode-sensor
+  description: "MixMode Sensor"
+  # Big Bang / Iron Bank are only amd64
+  architecture: amd64
+
+constants:
+  - name: TAG
+    value: "###ZARF_PKG_VAR_TAG###"
+
+variables:
+  - name: BRANCH
+    default: "main"
+    prompt: true
+
+components:
+  - name: mixmode-sensor
+    description: "MixMode Sensor"
+    required: true
+    repos:
+      - https://github.com/naps-dev/mixmode-sensor.git
+    manifests:
+      - name: mixmode-sensor-helm
+        namespace: mixmode
+        files:
+          - manifests/namespace.yaml
+          - manifests/gitrepository.yaml
+          - manifests/helmrelease.yaml
+    images:
+      - 765814079306.dkr.ecr.us-east-1.amazonaws.com/mixmode-sensor:###ZARF_PKG_VAR_TAG###

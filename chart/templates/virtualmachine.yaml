@@ -1,0 +1,81 @@
+apiVersion: kubevirt.io/v1alpha3
+kind: VirtualMachine
+metadata:
+  name: {{ include "mixmode.fullname" . }}
+  labels:
+    {{- include "mixmode.labels" . | nindent 4 }}
+    kubevirt.io/vm: {{ include "mixmode.fullname" . }}
+spec:
+  running: true
+  template:
+    metadata:
+      labels:
+        kubevirt.io/vm: {{ include "mixmode.fullname" . }}
+        {{- include "mixmode.selectorLabels" . | nindent 8 }}
+    spec:
+      domain:
+        devices:
+          cpu:
+            dedicatedCpuPlacement: true
+          disks:
+            - disk:
+                bus: virtio
+              name: {{ include "mixmode.fullname" . }}
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}
+              ports:
+                # Ports not known, including HTTP and SSH for now
+                - port: 22
+                - port: 80
+        resources:
+          limits:
+            cpu: 4 # from OVA, greater than 2 CPUs required due to`isolcpus` config.
+            memory: 16G # from OVA's OVF XML
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - dataVolume:
+            name: {{ include "mixmode.fullname" . }}
+          name: {{ include "mixmode.fullname" . }}
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+
+              disable_root: 0
+              ssh_pwauth: false
+              chpasswd:
+                expire: false
+              ssh_authorized_keys:
+                - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDvPpd4eUZY7wY78BKb3mnpKdXuq2dGGzlkRzzuZ5umrKA7TSv9S6hgWyT8RkHMm8ZFflPJWDZoUqFJ0PCEBQ9cKfqGoelokQ1tACSoUpImYe3ExfRJNENhoFMf65SbbKuL0RVVO0vDqQNaA2CCtlVzzB9B8CTjJVWKAszTmjOLybhWX6e49FV0hN+slUvw9aBICvoYS0B1e0koAhihATrETYCPp0Iv+iJRaKU7KzknlzIaGnkEGLsZkLpV13VB3YlSjaG6bMedw161RdRnITmBw90Yxp9spengWQxGvZlXmEH9xPgMZna67/ODv9zlEAof1VRtfOq7EwEsQdD152Ies66i2op+106xJaSPR6ako/SpdgG/c3Z4CCu8rdqpcqf54edWm4Ny6gfsQN99emDNXuGe6JLlJKcwtt0zTpPr/yCWIXit2NvurDspp3svJuxWYyhk2+QDLYFcLA+wku2K8WJsLmMDSVxJSUV/3zBq05p+otTDVBAIkRi5igucx4s= mikaelvanhemert@siduri76-4
+              ssh_deletekeys: true
+              ssh_genkeytypes: [rsa, dsa, ecdsa, ed25519]
+              disable_root: true
+              disable_root_opts: no-port-forwarding,no-agent-forwarding,no-X11-forwarding
+              allow_public_ssh_keys: true
+              ssh_quiet_keygen: true
+              ssh_publish_hostkeys:
+                enabled: true
+                blacklist: [dsa]
+    
+  dataVolumeTemplates:
+    - metadata:
+        name: {{ include "mixmode.fullname" . }}
+      spec:
+        pvc:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 55Gi  # TODO: add the exact size here
+        source:
+          registry:
+            url: "docker://{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+            # secretRef: endpoint-secret
+            # This should pull from the zarf-provided registry
+            pullMethod: node
